@@ -1,8 +1,10 @@
-export type Locale = "en" | "hi";
+export type Locale = "en" | "hi" | "bn" | "mr" | "te" | "ta" | "gu" | "ur" | "kn" | "or" | "ml" | "pa";
+
+const minimal = { appName: "Sahayak", language: "Language" } as const;
 
 const dict: Record<Locale, Record<string, string>> = {
   en: {
-    appName: "CivicPulse",
+    appName: "Sahayak",
     reportIssue: "Report an Issue",
     issuesOpenInWard: "Open issues in your ward",
     capture: "Capture",
@@ -24,7 +26,7 @@ const dict: Record<Locale, Record<string, string>> = {
     highContrast: "High contrast",
   },
   hi: {
-    appName: "सिविकपल्स",
+    appName: "सहायक",
     reportIssue: "समस्या रिपोर्ट ���रें",
     issuesOpenInWard: "आपके वार्ड में खुले मुद्दे",
     capture: "कैप्चर",
@@ -45,6 +47,16 @@ const dict: Record<Locale, Record<string, string>> = {
     language: "भाषा",
     highContrast: "हाई कॉन्ट्रास्ट",
   },
+  bn: { ...minimal },
+  mr: { ...minimal },
+  te: { ...minimal },
+  ta: { ...minimal },
+  gu: { ...minimal },
+  ur: { ...minimal },
+  kn: { ...minimal },
+  or: { ...minimal },
+  ml: { ...minimal },
+  pa: { ...minimal },
 };
 
 export function getDefaultLocale(): Locale {

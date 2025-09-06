@@ -1,90 +1,67 @@
 import React from "react";
 
-export function LogoLoader({ size = 200 }: { size?: number }) {
+// Home loading animation (≥5s):
+// 1) Full-screen leadership image fades out over ~2.5s to white
+// 2) One circular ring forms sequentially: saffron → green → white (each 1s)
+// 3) Inner white disc fades in; Ashok Chakra emerges centered
+// 4) "SAHAYAK" appears below in bold caps
+export function LogoLoader() {
+
   const saffron = "#ff9933";
   const green = "#138808";
-  const handBlue = "#1e40af"; // tailwind blue-800
   const chakraBlue = "#0a3b8f";
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 200 200"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-label="Loading"
-        className="[animation-delay:0ms]"
-      >
-        {/* Orange arc (draw clockwise) */}
-        <path
-          d="M30,100 A70,70 0 0 1 100,30"
-          fill="none"
-          stroke={saffron}
-          strokeWidth={10}
-          strokeLinecap="round"
-          className="cp-arc cp-arc-1"
-        />
-        {/* Green arc (draw clockwise) */}
-        <path
-          d="M100,30 A70,70 0 0 1 170,100"
-          fill="none"
-          stroke={green}
-          strokeWidth={10}
-          strokeLinecap="round"
-          className="cp-arc cp-arc-2"
-        />
+    <div className="fixed inset-0 z-50 grid place-items-center bg-white">
+      {/* Tricolor sequential circle */}
+      <svg viewBox="0 0 240 260" width={320} height={320} className="relative">
+        <g transform="translate(120 120)">
+          {/* Use pathLength to make thirds easy: 300 units total */}
+          <circle r="86" fill="none" stroke={saffron} strokeWidth="12" pathLength={300} className="arc arc-1" transform="rotate(-90)" />
+          <circle r="86" fill="none" stroke={green} strokeWidth="12" pathLength={300} className="arc arc-2" transform="rotate(30)" />
+          <circle r="86" fill="none" stroke="#ffffff" strokeWidth="12" pathLength={300} className="arc arc-3" transform="rotate(150)" />
 
-        {/* Cupped hand rises in */}
-        <g className="cp-rise">
-          <path
-            d="M40 140 C 70 150, 130 150, 160 140 C 155 152, 140 160, 120 165 C 95 172, 65 170, 48 160 C 43 157, 40 150, 40 140 Z"
-            fill={handBlue}
-            opacity="0.95"
-          />
-          {/* Thumb */}
-          <path d="M55 145 C 58 138, 70 135, 80 138 C 74 145, 65 148, 58 148 Z" fill={handBlue} />
+          {/* 3) Inner white disc + chakra */}
+          <g className="chakra-wrap">
+            <circle r="54" fill="#ffffff" className="inner-disc" />
+            <g className="chakra" transform="translate(0 0)">
+              <circle r="18" fill="none" stroke={chakraBlue} strokeWidth="3" />
+              <circle r="2.5" fill={chakraBlue} />
+              {Array.from({ length: 24 }).map((_, i) => (
+                <line key={i} x1="0" y1="3" x2="0" y2="16" stroke={chakraBlue} strokeWidth="2" transform={`rotate(${(360 / 24) * i})`} />
+              ))}
+            </g>
+          </g>
         </g>
-
-        {/* Ashok Chakra appears and spins */}
-        <g className="cp-chakra cp-fade" transform="translate(100 120)">
-          <circle r="15" fill="none" stroke={chakraBlue} strokeWidth="3" />
-          <circle r="2" fill={chakraBlue} />
-          {Array.from({ length: 24 }).map((_, i) => (
-            <line
-              key={i}
-              x1="0"
-              y1="3"
-              x2="0"
-              y2="14"
-              stroke={chakraBlue}
-              strokeWidth="2"
-              transform={`rotate(${(360 / 24) * i})`}
-            />
-          ))}
-        </g>
-
-        {/* Subtle pulse for whole assembled mark */}
-        <g className="cp-pulse" />
       </svg>
 
-      <div className="cp-text-fade text-lg font-semibold tracking-wide">Sahaayak</div>
+      {/* 4) Brand text */}
+      <div className="anim-text relative -mt-6 text-4xl font-extrabold tracking-wide text-black">SAHAYAK</div>
 
       <style>{`
-        @keyframes cp-draw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-        @keyframes cp-rise { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes cp-fade { from { opacity: 0; transform: translate(100px, 120px) scale(0.9); } to { opacity: 1; transform: translate(100px, 120px) scale(1); } }
-        @keyframes cp-spin { from { transform: translate(100px,120px) rotate(0deg); } to { transform: translate(100px,120px) rotate(360deg); } }
-        @keyframes cp-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-        @keyframes cp-text { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        /* Timings (s):
+           0.0–2.5 image fade-out to white
+           1.2–3.6 arcs draw (0.8s each sequential, overlapped with fade)
+           3.6–4.8 inner disc + chakra appear
+           4.9–6.0 text appears */
 
-        .cp-arc { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: cp-draw 1s ease forwards; }
-        .cp-arc-2 { animation-delay: .3s; }
-        .cp-rise { animation: cp-rise .7s ease .9s forwards; opacity: 0; }
-        .cp-chakra { animation: cp-spin 6s linear infinite 1.4s; }
-        .cp-fade { animation-name: cp-fade, cp-spin; animation-duration: .6s, 6s; animation-timing-function: ease, linear; animation-delay: 1.3s, 1.4s; animation-fill-mode: forwards, none; }
-        .cp-pulse { animation: cp-pulse 2.4s ease-in-out 2.2s infinite; transform-origin: 50% 60%; }
-        .cp-text-fade { opacity: 0; animation: cp-text .8s ease 1.8s forwards; }
+        /* Arcs: use pathLength=300 so 100 units = third of circumference */
+        .arc { stroke-dasharray: 100 200; stroke-dashoffset: 100; }
+        .arc-1 { animation: dashDraw .8s cubic-bezier(.22,1,.36,1) 1.2s forwards; }
+        .arc-2 { animation: dashDraw .8s cubic-bezier(.22,1,.36,1) 2.0s forwards; stroke-dashoffset: 100; }
+        .arc-3 { animation: dashDraw .8s cubic-bezier(.22,1,.36,1) 2.8s forwards; stroke-dashoffset: 100; }
+
+        @keyframes dashDraw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+
+        /* Inner disc + chakra */
+        @keyframes discIn { from { opacity:0; transform: scale(.9); } to { opacity:1; transform: scale(1); } }
+        @keyframes chakraIn { from { opacity:0; transform: scale(.9) rotate(0deg); } to { opacity:1; transform: scale(1) rotate(360deg); } }
+        .chakra-wrap { opacity: 0; animation: discIn 1s ease 3.6s forwards; transform-origin: center; }
+        .chakra { opacity: 0; animation: chakraIn 1.2s ease 3.6s forwards; transform-origin: center; }
+
+        /* Text */
+        @keyframes textIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+        .anim-text { opacity: 0; animation: textIn 1.1s ease 4.9s forwards; }
       `}</style>
     </div>
   );

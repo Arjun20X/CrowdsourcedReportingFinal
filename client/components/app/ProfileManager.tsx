@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 
 interface Props { uid: string }
 
-interface ProfileData { userId: string; username: string; email: string; phone: string }
+interface ProfileData { userId: string; username: string; email: string; phone: string; avatarUrl?: string; bio?: string; twoFactorEnabled?: boolean; privacy?: { showBio: boolean; showContributions: boolean } }
 
 export function ProfileManager({ uid }: Props) {
   const [loading, setLoading] = useState(true);
@@ -12,7 +12,7 @@ export function ProfileManager({ uid }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const [profile, setProfile] = useState<ProfileData>({ userId: uid, username: uid, email: `${uid}@example.com`, phone: "" });
+  const [profile, setProfile] = useState<ProfileData>({ userId: uid, username: uid, email: `${uid}@example.com`, phone: "", avatarUrl: "", bio: "", twoFactorEnabled: false, privacy: { showBio: true, showContributions: true } });
 
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
@@ -51,7 +51,7 @@ export function ProfileManager({ uid }: Props) {
   async function saveBasics() {
     setSaving(true); setMsg(null); setErr(null);
     try {
-      const res = await fetch(`/api/profile/${uid}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: profile.username, email: profile.email, phone: profile.phone }) });
+      const res = await fetch(`/api/profile/${uid}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: profile.username, email: profile.email, phone: profile.phone, bio: profile.bio, privacy: profile.privacy }) });
       if (!res.ok) {
         const j = await res.json().catch(()=>({error:'Error'}));
         throw new Error(j.error || 'Failed to update');
@@ -62,6 +62,23 @@ export function ProfileManager({ uid }: Props) {
     } catch (e: any) {
       setErr(e.message || 'Failed to update');
     } finally { setSaving(false); }
+  }
+
+  // Avatar upload
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  async function onAvatarFile(file?: File | null) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setAvatarUploading(true);
+      try {
+        const base64 = reader.result as string;
+        const res = await fetch(`/api/profile/${uid}/avatar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
+        const data = await res.json();
+        setProfile((p)=>({ ...p, avatarUrl: data.url }));
+      } finally { setAvatarUploading(false); }
+    };
+    reader.readAsDataURL(file);
   }
 
   // Password form
@@ -91,12 +108,16 @@ export function ProfileManager({ uid }: Props) {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
+      {/* Identity */}
       <section className="grid gap-3">
-        <h3 className="font-semibold">Account</h3>
-        <div className="grid gap-2">
-          <label className="text-sm text-muted-foreground">User ID</label>
-          <div className="font-mono text-sm">{profile.userId}</div>
+        <h3 className="font-semibold">Identity</h3>
+        <div className="flex items-center gap-4">
+          <img src={profile.avatarUrl || "/placeholder.svg"} alt="Avatar" className="size-16 rounded-full border object-cover" />
+          <div className="grid gap-2">
+            <input type="file" accept="image/*" onChange={(e)=>onAvatarFile(e.target.files?.[0])} />
+            {avatarUploading && <div className="text-xs text-muted-foreground">Uploading…</div>}
+          </div>
         </div>
         <div className="grid gap-1">
           <label className="text-sm">Username</label>
@@ -106,6 +127,10 @@ export function ProfileManager({ uid }: Props) {
             {!checking && nameAvailable === true && <span className="text-emerald-600">Available</span>}
             {!checking && nameAvailable === false && <span className="text-destructive">Already taken</span>}
           </div>
+        </div>
+        <div className="grid gap-1">
+          <label className="text-sm">About Me</label>
+          <textarea value={profile.bio || ""} onChange={(e)=>setProfile((p)=>({ ...p, bio: e.target.value }))} className="min-h-24 rounded-md border bg-background px-3 py-2" placeholder="A short bio visible to others" />
         </div>
         <div className="grid gap-1 sm:grid-cols-2">
           <div className="grid gap-1">
@@ -124,6 +149,27 @@ export function ProfileManager({ uid }: Props) {
         </div>
       </section>
 
+      {/* Activity */}
+      <Activity uid={uid} />
+
+      {/* Security */}
+      <Security uid={uid} enabled={!!profile.twoFactorEnabled} onToggle={async ()=>{
+        const r = await fetch(`/api/profile/${uid}/two-factor/toggle`, { method: 'POST' });
+        const j = await r.json();
+        setProfile((p)=>({ ...p, twoFactorEnabled: !!j.enabled }));
+      }} />
+
+      {/* Privacy */}
+      <section className="grid gap-3 border-t pt-4">
+        <h3 className="font-semibold">Privacy</h3>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!profile.privacy?.showBio} onChange={(e)=>setProfile((p)=>({ ...p, privacy: { ...(p.privacy||{showContributions:true,showBio:true}), showBio: e.target.checked } }))} /> Show "About Me" publicly</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!profile.privacy?.showContributions} onChange={(e)=>setProfile((p)=>({ ...p, privacy: { ...(p.privacy||{showContributions:true,showBio:true}), showContributions: e.target.checked } }))} /> Show my contributions and past reports</label>
+        <div>
+          <Button onClick={saveBasics} disabled={saving}>Save privacy</Button>
+        </div>
+      </section>
+
+      {/* Password */}
       <section className="grid gap-3 border-t pt-4">
         <h3 className="font-semibold">Change Password</h3>
         <div className="grid gap-1 sm:grid-cols-2">
@@ -142,6 +188,60 @@ export function ProfileManager({ uid }: Props) {
           {pwErr && <span className="text-sm text-destructive">{pwErr}</span>}
         </div>
       </section>
+    </div>
+  );
+}
+
+function Activity({ uid }: { uid: string }) {
+  const [data, setData] = useState<{ issuesReported: number; totalUpvotes: number } | null>(null);
+  useEffect(() => { (async ()=>{ try { const r = await fetch(`/api/profile/${uid}/activity`); const j = await r.json(); setData(j); } catch {} })(); }, [uid]);
+  return (
+    <section className="grid gap-3 border-t pt-4">
+      <h3 className="font-semibold">Your Impact</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <Kpi label="Issues Reported" value={data?.issuesReported ?? 0} />
+        <Kpi label="Total Upvotes" value={data?.totalUpvotes ?? 0} />
+      </div>
+    </section>
+  );
+}
+
+function Security({ uid, enabled, onToggle }: { uid: string; enabled: boolean; onToggle: ()=>Promise<void> | void }) {
+  const [sessions, setSessions] = useState<{ id: string; device: string; ip: string; lastActive: string; current?: boolean }[]>([]);
+  useEffect(() => { (async ()=>{ try { const r = await fetch(`/api/profile/${uid}/sessions`); const j = await r.json(); setSessions(j.sessions || []); } catch {} })(); }, [uid]);
+  async function logoutAll() { await fetch(`/api/profile/${uid}/sessions/logout-all`, { method: 'POST' }); const r = await fetch(`/api/profile/${uid}/sessions`); const j = await r.json(); setSessions(j.sessions || []); }
+  return (
+    <section className="grid gap-3 border-t pt-4">
+      <h3 className="font-semibold">Security</h3>
+      <div className="flex items-center justify-between rounded-md border p-3">
+        <div>
+          <div className="font-medium">Two-Factor Authentication</div>
+          <div className="text-sm text-muted-foreground">Protect your account with an extra step at sign-in.</div>
+        </div>
+        <Button variant={enabled ? "default" : "outline"} onClick={()=>onToggle()}>{enabled ? "Disable 2FA" : "Enable 2FA"}</Button>
+      </div>
+      <div>
+        <div className="mb-2 font-medium">Active Sessions</div>
+        <div className="grid gap-2">
+          {sessions.map((s)=> (
+            <div key={s.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
+              <div>{s.device} • {s.ip} • <span className="text-muted-foreground">{new Date(s.lastActive).toLocaleString()}</span> {s.current ? "(current)" : ""}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2">
+          <Button variant="outline" onClick={logoutAll}>Log out of all other devices</Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Kpi({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-2xl font-semibold">{value}</div>
     </div>
   );
 }

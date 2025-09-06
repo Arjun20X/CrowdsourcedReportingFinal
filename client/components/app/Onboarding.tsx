@@ -29,7 +29,7 @@ export function Onboarding() {
     <Dialog open={open}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Welcome to CivicPulse</DialogTitle>
+          <DialogTitle className="text-2xl">Welcome to Sahayak</DialogTitle>
           <DialogDescription>
             <div className="mt-4 grid gap-6">
               {slides.map((s, i) => (

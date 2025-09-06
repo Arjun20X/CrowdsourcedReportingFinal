@@ -45,6 +45,7 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
   async function submit() {
     if (!coords) return;
     setSubmitting(true);
+    const uid = JSON.parse(localStorage.getItem("uid") || '"anon"');
     const payload: CreateIssuePayload = {
       title: title || "Reported issue",
       description,
@@ -53,6 +54,7 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
       address: address || "Current location",
       wardId: "ward-1",
       photoBase64: photo,
+      userId: typeof uid === "string" ? uid : "anon",
     };
     try {
       const res = await fetch("/api/issues", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import type { Issue } from "@shared/api";
 import { IssueCard } from "@/components/app/IssueCard";
 
@@ -6,6 +7,7 @@ export default function Issues() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
   const uid = (typeof localStorage !== 'undefined' && localStorage.getItem('uid')) || `user-${Math.random().toString(36).slice(2,8)}`;
 
   async function load() {
@@ -27,6 +29,18 @@ export default function Issues() {
     return () => clearInterval(id);
   }, []);
 
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view');
+  const wardId = (typeof localStorage !== 'undefined' && localStorage.getItem('wardId')) || 'ward-1';
+
+  const filtered = useMemo(() => {
+    if (!view) return issues;
+    if (view === 'ward') return issues.filter((i)=> i.wardId === wardId && i.status !== 'resolved');
+    if (view === 'verified') return issues.filter((i)=> (i.upvotes || 0) > 0);
+    if (view === 'categories') return issues; // full list to explore categories
+    return issues;
+  }, [issues, view, wardId]);
+
   async function vote(id: string, v: 1 | -1) {
     try {
       // optimistic update
@@ -42,17 +56,20 @@ export default function Issues() {
         <h1 className="text-2xl font-bold">Issues</h1>
         <p className="text-sm text-muted-foreground">Help verify: Is this issue valid?</p>
       </div>
+      {view && (
+        <div className="mb-4 rounded-md border bg-muted/30 p-3 text-sm">Showing: <strong>{view === 'ward' ? `Your ward (${wardId})` : view === 'verified' ? 'Community verifications' : 'All categories'}</strong> — <a className="underline" href="/issues">Clear</a></div>
+      )}
       {loading ? (
         <div className="rounded-md border p-4">Loading…</div>
       ) : error ? (
         <div className="rounded-md border border-destructive p-4 text-destructive">{error}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {issues.map((i) => (
+          {filtered.map((i) => (
             <IssueCard key={i.id} issue={i} onVote={vote} onComment={() => {}} />
           ))}
-          {issues.length === 0 && (
-            <div className="col-span-full rounded-md border p-6 text-center text-muted-foreground">No issues to verify right now.</div>
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-md border p-6 text-center text-muted-foreground">No issues to show.</div>
           )}
         </div>
       )}

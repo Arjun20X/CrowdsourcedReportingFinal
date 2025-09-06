@@ -63,6 +63,7 @@ export interface Issue {
   verificationThreshold: number;
   comments: Comment[];
   contributions?: Contribution[];
+  createdBy?: string; // userId of reporter (for demo)
 }
 
 export interface CreateIssuePayload {
@@ -73,6 +74,7 @@ export interface CreateIssuePayload {
   address: string;
   wardId: string;
   photoBase64?: string;
+  userId?: string; // reporter
 }
 
 export interface IssuesResponse {
@@ -96,6 +98,8 @@ export interface CommunityPostMedia {
   kind: "image" | "video";
 }
 
+export type GalleryCategory = "park_cleanup" | "graffiti_removal" | "pothole_repair" | "other";
+
 export interface CommunityPost {
   id: string;
   userId: string;
@@ -103,24 +107,54 @@ export interface CommunityPost {
   media: CommunityPostMedia[];
   upvotes: number;
   createdAt: string;
+  category?: GalleryCategory;
 }
 
 export interface CreateCommunityPostPayload {
   userId: string;
   description: string;
   mediaBase64: string[]; // any number of images/videos as data URLs
+  category?: GalleryCategory;
 }
 
 export interface CommunityPostsResponse {
   posts: CommunityPost[];
 }
 
+// Community Events (Upcoming practices)
+export interface UpcomingEvent {
+  id: string;
+  title: string;
+  description?: string;
+  location: string;
+  startsAt: string; // ISO date-time
+}
+
+export interface UpcomingEventsResponse { events: UpcomingEvent[] }
+
 // Profile management types
+export interface PrivacySettings {
+  showBio: boolean;
+  showContributions: boolean;
+}
+
+export interface SessionInfo {
+  id: string;
+  device: string;
+  ip: string;
+  lastActive: string;
+  current?: boolean;
+}
+
 export interface UserProfile {
   userId: string;
   username: string;
   email: string;
   phone: string;
+  avatarUrl?: string;
+  bio?: string;
+  twoFactorEnabled?: boolean;
+  privacy?: PrivacySettings;
 }
 
 export interface GetProfileResponse {
@@ -131,6 +165,8 @@ export interface UpdateProfilePayload {
   username?: string;
   email?: string;
   phone?: string;
+  bio?: string;
+  privacy?: PrivacySettings;
 }
 
 export interface UsernameCheckPayload { username: string }
@@ -138,3 +174,10 @@ export interface UsernameCheckResponse { available: boolean }
 
 export interface ChangePasswordPayload { current: string; next: string }
 export interface ChangePasswordResponse { ok: true }
+
+export interface UploadAvatarResponse { url: string }
+export interface ActivitySummary { issuesReported: number; totalUpvotes: number }
+export interface SessionsResponse { sessions: SessionInfo[] }
+export interface Toggle2FAResponse { enabled: boolean }
+
+export type { LoginPayload, LoginResponse, OtpVerifyPayload, OtpVerifyResponse, SignupUserPayload, SignupAdminPayload, SignupResponse } from "./auth.d";

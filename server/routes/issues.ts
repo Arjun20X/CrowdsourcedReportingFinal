@@ -28,7 +28,7 @@ const commentSchema = z.object({ userId: z.string(), userName: z.string().min(1)
 const contributionSchema = z.object({ userId: z.string().min(1), userName: z.string().min(1), description: z.string().min(1).max(1000), mediaBase64: z.string().optional() });
 
 // In-memory store (replace with DB in production)
-const issues: Issue[] = [];
+export const issues: Issue[] = [];
 const votesByIssue: Record<string, Record<string, 1 | -1>> = {};
 const votesByContribution: Record<string, Record<string, 1>> = {};
 
@@ -115,6 +115,7 @@ export const createIssue: RequestHandler = (req, res) => {
     downvotes: 0,
     verificationThreshold: 5,
     comments: [],
+    createdBy: (req.body as any)?.userId || "anon",
   };
   issues.unshift(newIssue);
   res.status(201).json(newIssue);

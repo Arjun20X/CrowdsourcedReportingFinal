@@ -133,3 +133,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Scroll reveal animations */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s ease; will-change: opacity, transform; }
+.reveal-left { transform: translateX(-20px); }
+.reveal-right { transform: translateX(20px); }
+.reveal.reveal-active { opacity: 1; transform: none; }
