@@ -97,9 +97,7 @@ export default function Index() {
         <MapView />
       </section>
 
-      <section id="report">
-        <ReportFlow onCreated={(i) => setIssues((prev) => [i, ...prev])} />
-      </section>
+      <section id="report" />
 
       {/* Our Mission */}
       <OurMission />

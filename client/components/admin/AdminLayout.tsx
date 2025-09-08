@@ -6,6 +6,7 @@ const navItems = [
   { to: "/admin/departments", label: "Departments" },
   { to: "/admin/issues", label: "Issues" },
   { to: "/admin/leaderboards", label: "Leaderboards" },
+  { to: "/admin/ward-leaders", label: "Ward Leaders Performance" },
   { to: "/admin/analytics", label: "Analytics & Reports" },
   { to: "/admin/notifications", label: "Notifications" },
   { to: "/admin/users", label: "Admin Management" },

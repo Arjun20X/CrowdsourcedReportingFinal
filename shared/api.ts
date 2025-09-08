@@ -151,6 +151,7 @@ export interface UserProfile {
   username: string;
   email: string;
   phone: string;
+  aadhaar?: string;
   avatarUrl?: string;
   bio?: string;
   twoFactorEnabled?: boolean;
@@ -165,6 +166,7 @@ export interface UpdateProfilePayload {
   username?: string;
   email?: string;
   phone?: string;
+  aadhaar?: string;
   bio?: string;
   privacy?: PrivacySettings;
 }

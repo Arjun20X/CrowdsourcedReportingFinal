@@ -6,6 +6,7 @@ export default function AdminIssues() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [dept, setDept] = useState("");
   const [status, setStatus] = useState("");
+  const [urgentOnly, setUrgentOnly] = useState(false);
   const [q, setQ] = useState("");
   const [map, setMap] = useState(false);
 
@@ -14,11 +15,16 @@ export default function AdminIssues() {
   }, []);
 
   const filtered = useMemo(() => issues.filter(i =>
-    (!dept || i.wardId===dept) && (!status || i.status===status) && (!q || i.title.toLowerCase().includes(q.toLowerCase()) || i.address.toLowerCase().includes(q.toLowerCase()))
-  ), [issues, dept, status, q]);
+    (!dept || i.wardId===dept) && (!status || i.status===status) && (!q || i.title.toLowerCase().includes(q.toLowerCase()) || i.address.toLowerCase().includes(q.toLowerCase())) && (!urgentOnly || i.status==='escalated' || i.upvotes>10)
+  ), [issues, dept, status, q, urgentOnly]);
 
   const depts = useMemo(()=>Array.from(new Set(issues.map(i=>i.wardId))),[issues]);
   const statuses = useMemo(()=>Array.from(new Set(issues.map(i=>i.status))),[issues]);
+
+  async function updateStatus(id: string, status: Issue['status']){
+    await fetch(`/api/issues/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    const res = await fetch('/api/issues'); const d = await res.json(); setIssues(d.issues||[]);
+  }
 
   return (
     <div className="grid gap-4">
@@ -26,7 +32,8 @@ export default function AdminIssues() {
         <input placeholder="Search title/address" value={q} onChange={e=>setQ(e.target.value)} className="rounded border px-3 py-2 text-sm" />
         <select value={dept} onChange={e=>setDept(e.target.value)} className="rounded border px-2 py-2 text-sm"><option value="">All Departments</option>{depts.map(d=>(<option key={d} value={d}>{d}</option>))}</select>
         <select value={status} onChange={e=>setStatus(e.target.value)} className="rounded border px-2 py-2 text-sm"><option value="">All Statuses</option>{statuses.map(s=>(<option key={s} value={s}>{s}</option>))}</select>
-        <button onClick={()=>setMap(m=>!m)} className="ml-auto rounded border px-3 py-2 text-sm">{map? 'Table View':'Map View'}</button>
+        <label className="ml-auto inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={urgentOnly} onChange={e=>setUrgentOnly(e.target.checked)} /> Urgent only</label>
+        <button onClick={()=>setMap(m=>!m)} className="rounded border px-3 py-2 text-sm">{map? 'Table View':'Map View'}</button>
       </div>
 
       {map ? (
@@ -59,9 +66,9 @@ export default function AdminIssues() {
                   <td className="p-2">{new Date(i.createdAt).toLocaleString()}</td>
                   <td className="p-2">
                     <div className="flex gap-2">
-                      <button className="rounded border px-2 py-1 text-xs">Assign</button>
-                      <button className="rounded border px-2 py-1 text-xs">In-progress</button>
-                      <button className="rounded border px-2 py-1 text-xs">Resolved</button>
+                      <button onClick={()=>updateStatus(i.id, 'under_review')} className="rounded border px-2 py-1 text-xs">Assign</button>
+                      <button onClick={()=>updateStatus(i.id, 'in_progress')} className="rounded border px-2 py-1 text-xs">In-progress</button>
+                      <button onClick={()=>updateStatus(i.id, 'resolved')} className="rounded border px-2 py-1 text-xs">Resolved</button>
                     </div>
                   </td>
                 </tr>

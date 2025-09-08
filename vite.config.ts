@@ -24,6 +24,23 @@ export default defineConfig(({ mode }) => ({
       "@shared": path.resolve(__dirname, "./shared"),
     },
   },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "recharts",
+      "clsx",
+      "tailwind-merge",
+      "framer-motion",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-tooltip",
+    ],
+  },
+  esbuild: {
+    target: "esnext",
+  },
 }));
 
 function expressPlugin(): Plugin {

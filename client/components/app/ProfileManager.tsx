@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 
 interface Props { uid: string }
 
-interface ProfileData { userId: string; username: string; email: string; phone: string; avatarUrl?: string; bio?: string; twoFactorEnabled?: boolean; privacy?: { showBio: boolean; showContributions: boolean } }
+interface ProfileData { userId: string; username: string; email: string; phone: string; aadhaar?: string; avatarUrl?: string; bio?: string; twoFactorEnabled?: boolean; privacy?: { showBio: boolean; showContributions: boolean } }
 
 export function ProfileManager({ uid }: Props) {
   const [loading, setLoading] = useState(true);
@@ -12,7 +12,7 @@ export function ProfileManager({ uid }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const [profile, setProfile] = useState<ProfileData>({ userId: uid, username: uid, email: `${uid}@example.com`, phone: "", avatarUrl: "", bio: "", twoFactorEnabled: false, privacy: { showBio: true, showContributions: true } });
+  const [profile, setProfile] = useState<ProfileData>({ userId: uid, username: uid, email: `${uid}@example.com`, phone: "", aadhaar: "", avatarUrl: "", bio: "", twoFactorEnabled: false, privacy: { showBio: true, showContributions: true } });
 
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
@@ -51,7 +51,7 @@ export function ProfileManager({ uid }: Props) {
   async function saveBasics() {
     setSaving(true); setMsg(null); setErr(null);
     try {
-      const res = await fetch(`/api/profile/${uid}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: profile.username, email: profile.email, phone: profile.phone, bio: profile.bio, privacy: profile.privacy }) });
+      const res = await fetch(`/api/profile/${uid}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: profile.username, email: profile.email, phone: profile.phone, aadhaar: profile.aadhaar, bio: profile.bio, privacy: profile.privacy }) });
       if (!res.ok) {
         const j = await res.json().catch(()=>({error:'Error'}));
         throw new Error(j.error || 'Failed to update');
@@ -132,14 +132,22 @@ export function ProfileManager({ uid }: Props) {
           <label className="text-sm">About Me</label>
           <textarea value={profile.bio || ""} onChange={(e)=>setProfile((p)=>({ ...p, bio: e.target.value }))} className="min-h-24 rounded-md border bg-background px-3 py-2" placeholder="A short bio visible to others" />
         </div>
-        <div className="grid gap-1 sm:grid-cols-2">
+        <div className="grid gap-1 sm:grid-cols-3">
           <div className="grid gap-1">
             <label className="text-sm">Email</label>
             <Input type="email" value={profile.email} onChange={(e)=>setProfile((p)=>({ ...p, email: e.target.value }))} placeholder="you@example.com" />
           </div>
           <div className="grid gap-1">
             <label className="text-sm">Phone</label>
-            <Input type="tel" value={profile.phone} onChange={(e)=>setProfile((p)=>({ ...p, phone: e.target.value }))} placeholder="+1 555 0100" />
+            <Input type="tel" value={profile.phone} onChange={(e)=>setProfile((p)=>({ ...p, phone: e.target.value }))} placeholder="+91 98765 43210" />
+          </div>
+          <div className="grid gap-1">
+            <label className="text-sm">Aadhaar</label>
+            <Input inputMode="numeric" maxLength={12} value={profile.aadhaar||""} onChange={(e)=>{
+              const v = e.target.value.replace(/\D/g,"").slice(0,12);
+              setProfile((p)=>({ ...p, aadhaar: v }));
+            }} placeholder="12-digit Aadhaar" />
+            <div className="h-4 text-xs text-muted-foreground">{(profile.aadhaar||"").length>0 && (profile.aadhaar||"").length!==12 ? 'Enter 12 digits' : ''}</div>
           </div>
         </div>
         <div className="flex items-center gap-3">

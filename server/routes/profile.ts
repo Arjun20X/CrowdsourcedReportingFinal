@@ -19,6 +19,7 @@ const updateSchema = z.object({
   username: z.string().min(2).max(32).optional(),
   email: z.string().email().optional(),
   phone: z.string().min(7).max(20).optional(),
+  aadhaar: z.string().regex(/^\d{12}$/).optional(),
   bio: z.string().max(300).optional(),
   privacy: z.object({ showBio: z.boolean(), showContributions: z.boolean() }).optional(),
 });
@@ -37,6 +38,7 @@ function ensureProfile(userId: string) {
       username,
       email: `${userId}@example.com`,
       phone: "",
+      aadhaar: "",
       avatarUrl: "",
       bio: "",
       twoFactorEnabled: false,
@@ -54,7 +56,7 @@ function ensureProfile(userId: string) {
 export const getProfile: RequestHandler = (req, res) => {
   const { userId } = req.params as { userId: string };
   const p = ensureProfile(userId);
-  const payload: GetProfileResponse = { profile: { userId: p.userId, username: p.username, email: p.email, phone: p.phone, avatarUrl: p.avatarUrl, bio: p.bio, twoFactorEnabled: p.twoFactorEnabled, privacy: p.privacy } };
+  const payload: GetProfileResponse = { profile: { userId: p.userId, username: p.username, email: p.email, phone: p.phone, aadhaar: (p as any).aadhaar || "", avatarUrl: p.avatarUrl, bio: p.bio, twoFactorEnabled: p.twoFactorEnabled, privacy: p.privacy } };
   res.json(payload);
 };
 
@@ -63,7 +65,7 @@ export const updateProfile: RequestHandler = (req, res) => {
   const p = ensureProfile(userId);
   const parse = updateSchema.safeParse(req.body as UpdateProfilePayload);
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
-  const { username, email, phone, bio, privacy } = parse.data;
+  const { username, email, phone, aadhaar, bio, privacy } = parse.data as any;
   if (username && username !== p.username) {
     if (takenUsernames.has(username)) return res.status(409).json({ error: "Username already taken" });
     takenUsernames.delete(p.username);
@@ -72,9 +74,10 @@ export const updateProfile: RequestHandler = (req, res) => {
   }
   if (typeof email === "string") p.email = email;
   if (typeof phone === "string") p.phone = phone;
+  if (typeof aadhaar === "string") (p as any).aadhaar = aadhaar;
   if (typeof bio === "string") p.bio = bio;
   if (privacy) p.privacy = privacy as any;
-  const payload: GetProfileResponse = { profile: { userId: p.userId, username: p.username, email: p.email, phone: p.phone, avatarUrl: p.avatarUrl, bio: p.bio, twoFactorEnabled: p.twoFactorEnabled, privacy: p.privacy } };
+  const payload: GetProfileResponse = { profile: { userId: p.userId, username: p.username, email: p.email, phone: p.phone, aadhaar: (p as any).aadhaar || "", avatarUrl: p.avatarUrl, bio: p.bio, twoFactorEnabled: p.twoFactorEnabled, privacy: p.privacy } };
   res.json(payload);
 };
 

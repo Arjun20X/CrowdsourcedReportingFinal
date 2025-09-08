@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/app/BrandLogo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Languages } from "lucide-react";
 import { safeFetchJson } from "@/lib/api";
+import { ReportFlow } from "@/components/app/ReportFlow";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useLocalStorage<Locale>("locale", getDefaultLocale());
@@ -21,6 +22,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [notifItems, setNotifItems] = useState<{ id: string; kind: 'issue' | 'event'; title: string; meta?: string; href?: string; at: string }[]>([]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -41,10 +44,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const lower = window.location.pathname.toLowerCase();
-    if (lower.startsWith('/admin')) return; // don't poll in admin
+    const lower = pathname.toLowerCase();
+    if (lower.startsWith('/admin')) return;
     let cancel = false;
     async function fetchCount() {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
       try {
         const ji = await safeFetchJson<{ issues: any[] }>("/api/issues", undefined, { issues: [] });
         const je = await safeFetchJson<{ events: any[] }>("/api/community-events", undefined, { events: [] });
@@ -61,14 +66,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           setNotifItems(items);
           setNotifCount(issueItems.length + eventItems.length);
         }
-      } catch (err) {
-        console.warn('fetchCount error', err);
-      }
+      } catch {}
     }
     fetchCount();
     const id = setInterval(fetchCount, 10000);
     return () => { cancel = true; clearInterval(id); };
-  }, [window.location.pathname]);
+  }, [pathname]);
 
   useEffect(() => {
     function handleHash() {
@@ -83,8 +86,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
   const lower = pathname.toLowerCase();
   const showChrome = !(lower === "/" || lower.startsWith("/signup") || lower.startsWith("/otp") || lower.startsWith("/admin"));
 
@@ -141,13 +142,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {Boolean(uid) ? (
-              <Button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} variant="outline" title={'Ayush'}>
-                Ayush
-              </Button>
-            ) : null}
+            <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                {(uid||'You')?.[0]?.toUpperCase()}
+              </span>
+              <span className="max-w-[10ch] truncate text-sm">{uid || 'You'}</span>
+            </button>
             {menuOpen && (
               <div role="menu" className="absolute right-0 top-12 z-50 w-64 rounded-md border bg-background p-1 shadow-md">
+                <div className="flex items-center gap-2 rounded px-3 py-2">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{uid?.[0]?.toUpperCase()||'U'}</span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{uid}</div>
+                    <div className="text-xs text-muted-foreground">Signed in</div>
+                  </div>
+                </div>
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { setProfileOpen(true); setMenuOpen(false); }}>Profile</button>
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { window.location.href = '/my-issues'; setMenuOpen(false); }}>Issues Reported</button>
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { window.location.href = '/my-resolved'; setMenuOpen(false); }}>Issues Resolved</button>
@@ -215,6 +224,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <ProfileManager uid={uid} />
         </DialogContent>
       </Dialog>
+      {pathname === '/UserPage' && (<ReportFlow onCreated={() => {}} />)}
       <footer className="mt-16 border-t bg-muted/30">
         <div className="container grid gap-8 py-10 md:grid-cols-3">
           <div>
