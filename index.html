@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hello world project</title>
+    <script>
+      (function(){
+        try{
+          if (!('_fs_namespace' in window)) window['_fs_namespace'] = 'FS';
+          if (typeof window['FS'] === 'undefined') {
+            var noop=function(){};
+            window['FS'] = {
+              identify: noop, setUserVars: noop, event: noop, anonymize: noop, consent: noop,
+              shutdown: noop, restart: noop, log: noop,
+              getSession: function(){ return { url: null }; },
+              getCurrentSessionURL: function(){ return null; },
+              clearUserCookie: noop,
+            };
+          }
+        }catch(e){ /* ignore */ }
+      })();
+    </script>
   </head>
 
   <body>

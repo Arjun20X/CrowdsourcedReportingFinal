@@ -1,5 +1,5 @@
 export interface LoginPayload { mobile: string; aadhar: string }
-export interface LoginResponse { ok: boolean }
+export interface LoginResponse { ok: boolean; devOtp?: string }
 export interface OtpVerifyPayload { mobile: string; otp: string }
 export interface OtpVerifyResponse { ok: boolean; userId: string }
 export interface SignupUserPayload { aadhar: string; voterId: string; houseNumber: string; mobile: string; wardNumber: string; wardLeader: string }

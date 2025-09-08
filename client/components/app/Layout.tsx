@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -41,6 +41,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const lower = window.location.pathname.toLowerCase();
+    if (lower.startsWith('/admin')) return; // don't poll in admin
     let cancel = false;
     async function fetchCount() {
       try {
@@ -66,7 +68,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     fetchCount();
     const id = setInterval(fetchCount, 10000);
     return () => { cancel = true; clearInterval(id); };
-  }, []);
+  }, [window.location.pathname]);
 
   useEffect(() => {
     function handleHash() {
@@ -81,8 +83,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const lower = pathname.toLowerCase();
+  const showChrome = !(lower === "/" || lower.startsWith("/signup") || lower.startsWith("/otp") || lower.startsWith("/admin"));
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {showChrome && (
       <header className="sticky top-0 z-40 border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-background">
         <div className="container flex h-16 items-center justify-between pl-2.5 pr-4 sm:px-8">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
@@ -90,10 +98,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span>Sahayak</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <NavLink to="/" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Home</NavLink>
-            <NavLink to="/issues" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Issues</NavLink>
-            <NavLink to="/contributions" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Community</NavLink>
-            <NavLink to="/gallery" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Image Gallery</NavLink>
+              <NavLink to="/UserPage" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Home</NavLink>
+              <NavLink to="/issues" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Issues</NavLink>
+              <NavLink to="/contributions" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Community</NavLink>
+              <NavLink to="/gallery" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Image Gallery</NavLink>
           </nav>
           <div className="relative flex items-center gap-2 sm:gap-3" ref={menuRef}>
             {/* Notifications */}
@@ -133,16 +141,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {uid ? (
-              <Button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} variant="outline" title={uid || 'Profile'}>
-                {uid || 'Profile'}
+            {Boolean(uid) ? (
+              <Button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} variant="outline" title={'Ayush'}>
+                Ayush
               </Button>
-            ) : (
-              <>
-                <a href="/login" className="hidden xs:inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-accent">Login</a>
-                <a href="/signup" className="hidden sm:inline-block rounded-md border px-3 py-1.5 text-sm hover:bg-accent">Sign up</a>
-              </>
-            )}
+            ) : null}
             {menuOpen && (
               <div role="menu" className="absolute right-0 top-12 z-50 w-64 rounded-md border bg-background p-1 shadow-md">
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { setProfileOpen(true); setMenuOpen(false); }}>Profile</button>
@@ -152,7 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span>High Contrast</span>
                   <span className={`ml-2 rounded px-2 py-0.5 text-xs ${hc ? 'bg-emerald-600 text-white' : 'bg-muted text-foreground'}`}>{hc ? 'ON' : 'OFF'}</span>
                 </button>
-                <button role="menuitem" className="w-full rounded px-3 py-2 text-left text-destructive hover:bg-accent" onClick={() => { localStorage.clear(); window.location.reload(); }}>Logout</button>
+                <button role="menuitem" className="w-full rounded px-3 py-2 text-left text-destructive hover:bg-accent" onClick={() => { try{ localStorage.clear(); sessionStorage.clear(); }catch{} navigate('/'); }}>Logout</button>
               </div>
             )}
             <button aria-label="Open menu" className="inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-accent md:hidden" onClick={() => setMobileNavOpen(v=>!v)}>
@@ -163,12 +166,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+      )}
       <main>{children}</main>
 
-      {mobileNavOpen && (
+      {showChrome && mobileNavOpen && (
         <div className="fixed inset-x-0 top-16 z-50 border-b bg-background md:hidden">
           <nav className="grid gap-1 p-3">
-            <NavLink to="/" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Home</NavLink>
+            <NavLink to="/UserPage" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Home</NavLink>
             <NavLink to="/contributions" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Community</NavLink>
             <NavLink to="/issues" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Issues</NavLink>
             <NavLink to="/gallery" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Image Gallery</NavLink>

@@ -11,6 +11,12 @@ export default function OtpVerify() {
   const q = useQuery();
   const mobile = q.get('mobile') || '';
   const [otp, setOtp] = useState('');
+  useEffect(() => {
+    try {
+      const d = sessionStorage.getItem('devOtp');
+      if (d && /^\d{6}$/.test(d)) setOtp(d);
+    } catch {}
+  }, []);
   const [loading, setLoading] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
   const nav = useNavigate();
@@ -23,7 +29,7 @@ export default function OtpVerify() {
       if (!r.ok) throw new Error('Verification failed');
       setShowLoader(true);
       try { localStorage.setItem('uid', 'Ayush'); sessionStorage.setItem('postLogin', '1'); } catch {}
-      setTimeout(()=>{ nav('/'); }, 5200);
+      setTimeout(()=>{ nav('/UserPage'); }, 5200);
     } catch (e:any) {
       toast({ title: 'Verification failed', description: e.message });
     } finally {

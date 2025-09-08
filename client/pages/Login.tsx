@@ -24,7 +24,16 @@ export default function Login() {
     setLoading(true);
     try {
       const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobile, aadhar }) });
+      const j = await r.json();
       if (!r.ok) throw new Error('Login failed');
+      try {
+        if (j?.devOtp) {
+          sessionStorage.setItem('devOtp', j.devOtp);
+        }
+      } catch {}
+      if (j?.devOtp) {
+        toast({ title: 'Test OTP (dev only)', description: j.devOtp });
+      }
       nav(`/otp?mobile=${encodeURIComponent(mobile)}`);
     } catch (e:any) {
       toast({ title: 'Login failed', description: e.message });

@@ -5,7 +5,7 @@ import React from "react";
 // 2) One circular ring forms sequentially: saffron → green → white (each 1s)
 // 3) Inner white disc fades in; Ashok Chakra emerges centered
 // 4) "SAHAYAK" appears below in bold caps
-export function LogoLoader() {
+export function LogoLoader({ size = 320 }: { size?: number }) {
 
   const saffron = "#ff9933";
   const green = "#138808";
@@ -14,7 +14,7 @@ export function LogoLoader() {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-white">
       {/* Tricolor sequential circle */}
-      <svg viewBox="0 0 240 260" width={320} height={320} className="relative">
+      <svg viewBox="0 0 240 260" width={size} height={size} className="relative">
         <g transform="translate(120 120)">
           {/* Use pathLength to make thirds easy: 300 units total */}
           <circle r="86" fill="none" stroke={saffron} strokeWidth="12" pathLength={300} className="arc arc-1" transform="rotate(-90)" />
