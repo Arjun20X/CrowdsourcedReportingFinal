@@ -15,6 +15,7 @@ const MyResolved = lazy(() => import("./pages/MyResolved"));
 const Issues = lazy(() => import("./pages/Issues"));
 const Contributions = lazy(() => import("./pages/Contributions"));
 const Gallery = lazy(() => import("./pages/Gallery"));
+const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const OtpVerify = lazy(() => import("./pages/OtpVerify"));
 const Signup = lazy(() => import("./pages/Signup"));
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/issues" element={<RequireAuth><Issues /></RequireAuth>} />
               <Route path="/contributions" element={<RequireAuth><Contributions /></RequireAuth>} />
               <Route path="/gallery" element={<RequireAuth><Gallery /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
               <Route path="/my-issues" element={<RequireAuth><MyIssues /></RequireAuth>} />
               <Route path="/my-resolved" element={<RequireAuth><MyResolved /></RequireAuth>} />
               <Route path="/otp" element={<OtpVerify />} />

@@ -10,6 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Languages } from "lucide-react";
 import { safeFetchJson } from "@/lib/api";
 import { ReportFlow } from "@/components/app/ReportFlow";
+import { LeaderboardList } from "@/components/app/LeaderboardList";
+import { WardLeaderDashboard } from "@/components/app/WardLeaderDashboard";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useLocalStorage<Locale>("locale", getDefaultLocale());
@@ -21,6 +23,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifItems, setNotifItems] = useState<{ id: string; kind: 'issue' | 'event'; title: string; meta?: string; href?: string; at: string }[]>([]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [leaderPerfOpen, setLeaderPerfOpen] = useState(false);
+  const [userPageReady, setUserPageReady] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -30,6 +35,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if (hc) root.classList.add("hc"); else root.classList.remove("hc");
   }, [hc]);
 
+  useEffect(() => {
+    function onReady(){ setUserPageReady(true); }
+    function onUnready(){ setUserPageReady(false); }
+    window.addEventListener('userpage_ready', onReady);
+    window.addEventListener('userpage_unready', onUnready);
+    try { setUserPageReady(sessionStorage.getItem('userpage_ready') === '1'); } catch {}
+    return () => {
+      window.removeEventListener('userpage_ready', onReady);
+      window.removeEventListener('userpage_unready', onUnready);
+    };
+  }, []);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -103,6 +119,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavLink to="/issues" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Issues</NavLink>
               <NavLink to="/contributions" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Community</NavLink>
               <NavLink to="/gallery" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Image Gallery</NavLink>
+              {pathname === '/UserPage' && (
+                <button className="text-muted-foreground hover:text-foreground" onClick={() => setLeaderPerfOpen(v=>!v)} aria-haspopup="dialog" aria-expanded={leaderPerfOpen}>Ward Leader Progress</button>
+              )}
           </nav>
           <div className="relative flex items-center gap-2 sm:gap-3" ref={menuRef}>
             {/* Notifications */}
@@ -124,7 +143,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {[
                   { code: 'en', label: 'English' },
                   { code: 'hi', label: 'हिंदी' },
-                  { code: 'bn', label: 'বাংলা' },
+                  { code: 'bn', label: '���াংলা' },
                   { code: 'mr', label: 'मराठी' },
                   { code: 'te', label: 'తెలుగు' },
                   { code: 'ta', label: 'தமிழ்' },
@@ -142,28 +161,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                {(uid||'You')?.[0]?.toUpperCase()}
-              </span>
-              <span className="max-w-[10ch] truncate text-sm">{uid || 'You'}</span>
-            </button>
+            {(() => { const displayName = pathname === '/UserPage' ? 'Ayush' : (uid || 'You'); return (
+              <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                  {displayName[0]?.toUpperCase()}
+                </span>
+                <span className="max-w-[10ch] truncate text-sm">{displayName}</span>
+              </button> ); })()}
             {menuOpen && (
               <div role="menu" className="absolute right-0 top-12 z-50 w-64 rounded-md border bg-background p-1 shadow-md">
                 <div className="flex items-center gap-2 rounded px-3 py-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{uid?.[0]?.toUpperCase()||'U'}</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{(pathname === '/UserPage' ? 'Ayush' : (uid || 'User'))[0]?.toUpperCase()}</span>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{uid}</div>
+                    <div className="truncate text-sm font-medium">{pathname === '/UserPage' ? 'Ayush' : (uid || 'User')}</div>
                     <div className="text-xs text-muted-foreground">Signed in</div>
                   </div>
                 </div>
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { setProfileOpen(true); setMenuOpen(false); }}>Profile</button>
-                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { window.location.href = '/my-issues'; setMenuOpen(false); }}>Issues Reported</button>
-                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { window.location.href = '/my-resolved'; setMenuOpen(false); }}>Issues Resolved</button>
-                <button role="menuitem" className="flex w-full items-center justify-between rounded px-3 py-2 hover:bg-accent" onClick={() => setHc(!hc)}>
-                  <span>High Contrast</span>
-                  <span className={`ml-2 rounded px-2 py-0.5 text-xs ${hc ? 'bg-emerald-600 text-white' : 'bg-muted text-foreground'}`}>{hc ? 'ON' : 'OFF'}</span>
-                </button>
+                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { navigate('/my-issues'); setMenuOpen(false); }}>Issues Reported</button>
+                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { navigate('/my-resolved'); setMenuOpen(false); }}>Issues Resolved</button>
+                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { navigate('/contributions'); setMenuOpen(false); }}>Contributions</button>
+                {pathname === '/UserPage' && (
+                  <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { setLeaderboardOpen(true); setMenuOpen(false); }}>Leaderboard</button>
+                )}
+                <button role="menuitem" className="w-full rounded px-3 py-2 text-left hover:bg-accent" onClick={() => { navigate('/settings'); setMenuOpen(false); }}>Settings</button>
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left text-destructive hover:bg-accent" onClick={() => { try{ localStorage.clear(); sessionStorage.clear(); }catch{} navigate('/'); }}>Logout</button>
               </div>
             )}
@@ -185,6 +206,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavLink to="/contributions" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Community</NavLink>
             <NavLink to="/issues" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Issues</NavLink>
             <NavLink to="/gallery" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Image Gallery</NavLink>
+            {pathname === '/UserPage' && (
+              <button className="rounded px-3 py-2 text-left hover:bg-accent" aria-haspopup="dialog" aria-expanded={leaderPerfOpen} onClick={()=>{ setLeaderPerfOpen(v=>!v); setMobileNavOpen(false); }}>Ward Leader Progress</button>
+            )}
           </nav>
         </div>
       )}
@@ -213,6 +237,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </ul>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Leaderboard Overlay */}
+      <Dialog open={leaderboardOpen} onOpenChange={setLeaderboardOpen}>
+        <DialogContent className="sm:max-w-xl w-[92vw] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Top Contributors in Your Ward</DialogTitle>
+          </DialogHeader>
+          <LeaderboardList />
+        </DialogContent>
+      </Dialog>
+
+      {/* Ward Leader Performance Dashboard */}
+      <Dialog open={leaderPerfOpen} onOpenChange={setLeaderPerfOpen}>
+        <DialogContent className="sm:max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ward Leader Performance Dashboard</DialogTitle>
+          </DialogHeader>
+          <WardLeaderDashboard />
         </DialogContent>
       </Dialog>
 

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { CreateIssuePayload, Issue } from "@shared/api";
 import piexif from "piexifjs";
+import React, { useEffect, useRef, useState } from "react";
 
 function vibrate() {
   try { navigator.vibrate?.(30); } catch {}
@@ -47,17 +47,36 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [permError, setPermError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Attach stream to video after it mounts
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !stream) return;
+    v.srcObject = stream as any;
+    v.playsInline = true;
+    v.muted = true;
+    const play = () => v.play().catch(() => {});
+    if (v.readyState < 2 || !v.videoWidth) {
+      v.addEventListener("loadedmetadata", play, { once: true });
+    } else {
+      play();
+    }
+    return () => {
+      try { v.pause(); (v as any).srcObject = null; } catch {}
+    };
+  }, [stream]);
+
   async function requestPermissions() {
     setPermError(null);
     setLocating(true);
+
     const geoPromise = new Promise<{ lat: number; lng: number }>((resolve, reject) => {
       if (!navigator.geolocation) return reject(new Error("Geolocation unavailable"));
       navigator.geolocation.getCurrentPosition(
@@ -69,28 +88,31 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
 
     const camPromise = (async () => {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera unavailable");
-      try { stopStream(); } catch {}
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: true });
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
       setStream(s);
       const v = videoRef.current;
       if (v) {
         v.srcObject = s as any;
         v.playsInline = true;
+        v.muted = true;
+        if (v.readyState < 2 || !v.videoWidth) {
+          await new Promise<void>((resolve) => v.addEventListener("loadedmetadata", () => resolve(), { once: true }));
+        }
         await v.play().catch(() => {});
       }
-      return s;
     })();
 
     try {
-      const [geo] = await Promise.allSettled([geoPromise, camPromise]).then((results) => {
-        const g = results[0];
-        const c = results[1];
-        if (g.status === "fulfilled") setCoords(g.value);
-        if (c.status === "rejected") setPermError("Camera permission denied or unavailable");
-        if (g.status === "rejected") setPermError((p) => p || "Location permission denied or unavailable");
-        return [g.status === "fulfilled" ? g.value : null];
-      });
-      if (geo) setAddress("Current location");
+      const [g, c] = await Promise.allSettled([geoPromise, camPromise]);
+      if (g.status === "fulfilled") {
+        setCoords(g.value);
+        setAddress("Current location");
+      } else {
+        setPermError((p) => p || "Location permission denied or unavailable");
+      }
+      if (c.status === "rejected") {
+        setPermError((p) => p || "Camera permission denied or unavailable");
+      }
     } finally {
       setLocating(false);
     }
@@ -98,6 +120,13 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
 
   function stopStream() {
     try { stream?.getTracks().forEach((t) => t.stop()); } catch {}
+    try {
+      const v = videoRef?.current;
+      if (v) {
+        try { (v.srcObject as any) = null; } catch {}
+        v.pause();
+      }
+    } catch {}
     setStream(null);
   }
 
@@ -132,9 +161,13 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
     rec.start();
   }
 
+
   async function captureFromStream() {
-    if (!videoRef.current) return;
     const v = videoRef.current;
+    if (!v) return;
+    if (v.readyState < 2 || !v.videoWidth) {
+      await new Promise<void>((resolve) => v.addEventListener("loadeddata", () => resolve(), { once: true }));
+    }
     const c = canvasRef.current!;
     const w = v.videoWidth || 1280;
     const h = v.videoHeight || 720;
@@ -194,7 +227,7 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
 
   return (
     <>
-      <Button size="lg" className="fixed right-6 shadow-lg z-60" style={{ bottom: "calc(1.5rem + 40px + env(safe-area-inset-bottom))" }} onClick={start} aria-label="Report an Issue">
+      <Button size="lg" className="fixed right-4 sm:right-6 shadow-lg z-[60]" style={{ bottom: "max(6rem, calc(2rem + env(safe-area-inset-bottom)))" }} onClick={start} aria-label="Report an Issue">
         📸 Report
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -206,7 +239,7 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
             <div className="grid gap-4">
               {stream ? (
                 <div className="relative">
-                  <video ref={videoRef} className="w-full rounded-lg bg-black" muted playsInline />
+                  <video ref={videoRef} className="w-full rounded-lg bg-black" muted playsInline autoPlay />
                   <canvas ref={canvasRef} className="hidden" />
                 </div>
               ) : photo ? (
@@ -221,7 +254,7 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
               </div>
               <div className="flex flex-wrap gap-2 justify-between">
                 <div className="flex gap-2">
-                  <Button onClick={captureFromStream} disabled={!stream || !coords}>Capture</Button>
+                  <Button onClick={captureFromStream} disabled={!stream}>Take Photo</Button>
                   <Button variant="outline" onClick={() => inputRef.current?.click()}>Upload</Button>
                 </div>
                 <Button onClick={() => setStep(2)} disabled={!photo}>Next</Button>

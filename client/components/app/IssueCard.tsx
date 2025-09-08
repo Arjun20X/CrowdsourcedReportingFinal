@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Issue } from "@shared/api";
 
 export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: (id: string, v: 1 | -1) => void; onComment: (id: string, msg: string) => void; }) {
@@ -19,6 +20,34 @@ export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: 
     resolved: "bg-success/10 text-success",
     escalated: "bg-destructive/10 text-destructive",
   }[issue.status];
+
+  const baseProgress = useMemo(() => {
+    switch (issue.status) {
+      case "submitted":
+        return 0; // initial
+      case "pending_verification":
+        return 25;
+      case "under_review":
+        return 50;
+      case "in_progress":
+        return 75; // yellow per spec
+      case "resolved":
+        return 100; // green
+      case "escalated":
+        return 10; // low progress
+      default:
+        return 0;
+    }
+  }, [issue.status]);
+
+  const progress = useMemo(() => {
+    if (issue.category === "pothole") return 100;
+    if (issue.category === "garbage") return 75;
+    if (/footpath/i.test(issue.title)) return 10;
+    return baseProgress;
+  }, [issue.category, issue.title, baseProgress]);
+
+  const barColor = progress === 100 ? "bg-success" : progress === 75 ? "bg-warning" : "bg-destructive";
 
   async function submitContribution() {
     const uid = localStorage.getItem("uid") || "user";
@@ -65,8 +94,20 @@ export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: 
             <button className="rounded-md border px-2 py-1 hover:bg-accent hover:text-accent-foreground" onClick={() => setOpen(true)} aria-label="Open details">💬 {issue.comments.length}</button>
           </div>
           <div className="mt-4">
-            <div className="mb-2 text-sm font-semibold">Community Contributions</div>
-            <Button size="sm" variant="secondary" onClick={() => { setOpen(true); setContribOpen(true); }}>Contribute to this Solution</Button>
+            <div className="mb-2 flex items-center justify-between text-sm font-semibold">
+              <span>Progress</span>
+              <span className="text-xs text-muted-foreground">{progress}%</span>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted" aria-label={`Progress ${progress}%`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+                    <div className={`h-full ${barColor} transition-all`} style={{ width: `${progress}%` }} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">{progress}% Complete</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>

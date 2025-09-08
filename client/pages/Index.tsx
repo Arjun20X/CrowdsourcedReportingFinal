@@ -77,6 +77,19 @@ export default function Index() {
   }
 
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('userpage_ready', '1');
+      window.dispatchEvent(new Event('userpage_ready'));
+    } catch {}
+    return () => {
+      try {
+        sessionStorage.removeItem('userpage_ready');
+        window.dispatchEvent(new Event('userpage_unready'));
+      } catch {}
+    };
+  }, []);
+
   return (
     <div>
       <Onboarding />
@@ -97,7 +110,7 @@ export default function Index() {
         <MapView />
       </section>
 
-      <section id="report" />
+      <section id="report" className="-mt-[30px]" />
 
       {/* Our Mission */}
       <OurMission />
