@@ -20,6 +20,7 @@ const Login = lazy(() => import("./pages/Login"));
 const OtpVerify = lazy(() => import("./pages/OtpVerify"));
 const Signup = lazy(() => import("./pages/Signup"));
 const SignupUser = lazy(() => import("./pages/SignupUser"));
+const Services = lazy(() => import("./pages/Services"));
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminDepartments = lazy(() => import("./pages/admin/Departments"));
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/otp" element={<OtpVerify />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/signup/user" element={<SignupUser />} />
+              <Route path="/services" element={<Services />} />
               <Route path="/Admin" element={<Navigate to="/admin" replace />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />

@@ -195,7 +195,11 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
   }
 
   async function submit() {
-    if (!coords) return;
+    if (!coords) {
+      // Provide immediate feedback if location is not available
+      try { alert('Location not available. Please allow location access or enter address.'); } catch {}
+      return;
+    }
     setSubmitting(true);
     const uid = JSON.parse(localStorage.getItem("uid") || '"anon"');
     const payload: CreateIssuePayload = {

@@ -129,7 +129,7 @@ export default function AuthLanding() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] text-foreground">
+    <div className="relative min-h-[100dvh] text-foreground" style={{ marginTop: '-4px' }}>
       {/* Animated patriotic background */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         {shapes.map(s => (
@@ -193,6 +193,20 @@ export default function AuthLanding() {
         </div>
       </header>
 
+      {/* Leaderboard ad placeholder (homepage) */}
+      <div className="w-full">
+        <div className="container mx-auto px-4 py-2">
+          <div className="mx-auto max-w-6xl">
+            <div className="w-full border-2 border-dashed border-gray-300 dark:border-white/30 bg-white/40 text-center p-3 rounded-md text-sm text-muted-foreground">
+              Ad Slot: Leaderboard (728x90 desktop / 320x50 mobile)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating sidebar rectangle (homepage, desktop only) */}
+      <div className="hidden md:block fixed right-6 top-1/3 w-72" />
+
       {mobileNavOpen && (
         <div className="fixed inset-0 z-30">
           <div className="absolute inset-0 bg-black/50" onClick={()=>setMobileNavOpen(false)} />
@@ -226,7 +240,7 @@ export default function AuthLanding() {
       )}
 
       {/* Center card with About summary and CTA */}
-      <main id="top" className="relative">
+      <main id="top" className="relative" style={{ marginTop: '20px' }}>
         <section className="mx-auto mt-10 max-w-5xl px-4">
           <div className="rounded-2xl border border-white/30 bg-white/60 p-8 shadow-xl backdrop-blur dark:bg-white/10 flex flex-col items-center justify-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-center sm:text-left">Connecting Citizens and Municipalities</h1>

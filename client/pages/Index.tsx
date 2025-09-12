@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { MapView } from "@/components/app/MapView";
@@ -49,6 +49,26 @@ export default function Index() {
     }catch{}
   },[]);
 
+  useEffect(() => {
+    try {
+      const skipLoader = typeof window !== 'undefined' && sessionStorage.getItem('postLogin') === '1';
+      const showLoaderNow = !(dataReady && (minElapsed || skipLoader));
+      if (!showLoaderNow) {
+        sessionStorage.setItem('userpage_ready', '1');
+        window.dispatchEvent(new Event('userpage_ready'));
+      } else {
+        sessionStorage.removeItem('userpage_ready');
+        window.dispatchEvent(new Event('userpage_unready'));
+      }
+    } catch {}
+    return () => {
+      try {
+        sessionStorage.removeItem('userpage_ready');
+        window.dispatchEvent(new Event('userpage_unready'));
+      } catch {}
+    };
+  }, [dataReady, minElapsed]);
+
   async function vote(id: string, v: 1 | -1) {
     try {
       const res = await fetch(`/api/issues/${id}/vote`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "me", vote: v }) });
@@ -68,6 +88,37 @@ export default function Index() {
 
   const skipLoader = typeof window !== 'undefined' && sessionStorage.getItem('postLogin') === '1';
   const showLoader = !(dataReady && (minElapsed || skipLoader));
+
+  // Ads carousel (auto-play, loop, pause on hover)
+  const adsCarouselRef = useRef<any>(null);
+  const adsIntervalRef = useRef<number | null>(null);
+  const ADS = [
+    'https://cdn.builder.io/api/v1/image/assets%2F3365a90a56924085bfe3dc76a66f175f%2Ff881e6c9b89f46b584ecd43a312a947e?format=webp&width=800',
+    'https://cdn.builder.io/api/v1/image/assets%2F3365a90a56924085bfe3dc76a66f175f%2F93a7043f5ea04da58f70f1507cc7fdf3?format=webp&width=800',
+    'https://cdn.builder.io/api/v1/image/assets%2F3365a90a56924085bfe3dc76a66f175f%2F696a321311634f178f18c071b1daad43?format=webp&width=800',
+    'https://cdn.builder.io/api/v1/image/assets%2F3365a90a56924085bfe3dc76a66f175f%2Fcf847536cfea4594971424ed2b1cc112?format=webp&width=800',
+  ];
+
+  function startAds() {
+    stopAds();
+    adsIntervalRef.current = window.setInterval(() => {
+      try { adsCarouselRef.current?.scrollNext(); } catch {};
+    }, 4500);
+  }
+  function stopAds() {
+    if (adsIntervalRef.current) { window.clearInterval(adsIntervalRef.current); adsIntervalRef.current = null; }
+  }
+
+  // start autoplay when component mounts
+  useEffect(() => {
+    startAds();
+    const onVisibility = () => {
+      if (document.hidden) stopAds(); else startAds();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { stopAds(); document.removeEventListener('visibilitychange', onVisibility); };
+  }, []);
+
   if (showLoader) {
     return (
       <div className="min-h-[65vh] grid place-items-center">
@@ -77,24 +128,11 @@ export default function Index() {
   }
 
 
-  useEffect(() => {
-    try {
-      sessionStorage.setItem('userpage_ready', '1');
-      window.dispatchEvent(new Event('userpage_ready'));
-    } catch {}
-    return () => {
-      try {
-        sessionStorage.removeItem('userpage_ready');
-        window.dispatchEvent(new Event('userpage_unready'));
-      } catch {}
-    };
-  }, []);
-
   return (
     <div>
       <Onboarding />
-      <section className="container grid items-center gap-8 py-10 md:grid-cols-2">
-        <div>
+      <section className="container grid items-center gap-8 py-10 md:grid-cols-3">
+        <div className="md:col-span-2">
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
             Empower citizens. Accelerate resolutions.
           </h1>
@@ -108,6 +146,14 @@ export default function Index() {
           </div>
         </div>
         <MapView />
+        {/* Right panel ad (300x250 desktop, below map on mobile) */}
+        <aside className="w-full md:w-72">
+          <div className="mx-auto md:ml-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-white/30 bg-white/40 p-4 rounded-md text-center text-sm text-muted-foreground">
+              Ad Slot: Dashboard Right Panel (300x250)
+            </div>
+          </div>
+        </aside>
       </section>
 
       <section id="report" className="-mt-[30px]" />
@@ -123,6 +169,44 @@ export default function Index() {
 
       {/* Testimonials */}
       <Testimonials />
+
+      {/* Advertisements */}
+      <section className="border-t py-12">
+        <div className="container mx-auto">
+          <h2 className="mb-6 text-center text-3xl font-bold">Advertisements</h2>
+
+          <div className="overflow-hidden">
+            <style>{`
+              .ad-marquee { display: flex; }
+              .ad-track { display:flex; gap:20px; align-items:center; animation: adMarquee 28s linear infinite; }
+              .ad-box { width: 299px; height: 299px; min-width: 299px; min-height: 299px; }
+              @keyframes adMarquee { from { transform: translateX(0%); } to { transform: translateX(-50%); } }
+            `}</style>
+
+            <div className="ad-marquee">
+              <div className="ad-track" aria-hidden="true">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <div key={`ad-${idx}`} className="ad-box">
+                    <div className="h-full rounded-lg border bg-card p-4 text-sm shadow-sm flex items-center justify-center transition-transform duration-200 transform hover:scale-105 hover:shadow-lg">
+                      <span className="text-sm font-medium text-foreground">Post Your Ad Here</span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* duplicated for seamless loop */}
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <div key={`ad-dup-${idx}`} className="ad-box">
+                    <div className="h-full rounded-lg border bg-card p-4 text-sm shadow-sm flex items-center justify-center transition-transform duration-200 transform hover:scale-105 hover:shadow-lg">
+                      <span className="text-sm font-medium text-foreground">Post Your Ad Here</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }

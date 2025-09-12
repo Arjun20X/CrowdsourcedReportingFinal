@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 function bboxFromCenter(lat: number, lng: number, delta = 0.02) {
   const south = lat - delta;
@@ -24,11 +24,31 @@ export function MapView() {
   const center = coords || { lat: 28.6139, lng: 77.2090 };
   const bbox = useMemo(() => bboxFromCenter(center.lat, center.lng, 0.02), [center]);
   const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox.west}%2C${bbox.south}%2C${bbox.east}%2C${bbox.north}&layer=mapnik&marker=${center.lat}%2C${center.lng}`;
+  const [mapSrc, setMapSrc] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    // Defer loading the iframe slightly to avoid iframe evaluation timeouts in preview environments.
+    const t = setTimeout(() => setMapSrc(src), 800);
+    return () => clearTimeout(t);
+  }, [src]);
 
   return (
     <div className="relative w-full overflow-hidden rounded-xl border bg-muted">
       <div className="aspect-[16/9]">
-        <iframe title="Map" aria-label="Map of nearby issues" className="h-full w-full" src={src} />
+        {mapSrc ? (
+          <iframe
+            ref={iframeRef}
+            title="Map"
+            aria-label="Map of nearby issues"
+            className="h-full w-full"
+            src={mapSrc}
+            loading="lazy"
+            onError={() => console.warn('Map iframe failed to load')}
+          />
+        ) : (
+          <div className="h-full w-full grid place-items-center text-sm text-muted-foreground">Loading map…</div>
+        )}
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
       {denied && (

@@ -65,12 +65,24 @@ export default function Issues() {
         <div className="rounded-md border border-destructive p-4 text-destructive">{error}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((i) => (
-            <IssueCard key={i.id} issue={i} onVote={vote} onComment={() => {}} />
-          ))}
           {filtered.length === 0 && (
             <div className="col-span-full rounded-md border p-6 text-center text-muted-foreground">No issues to show.</div>
           )}
+          {filtered.map((item, idx) => {
+            const nodes: React.ReactNode[] = [];
+            nodes.push(<IssueCard key={item.id} issue={item} onVote={vote} onComment={() => {}} />);
+            // Insert native ad placeholder after every 10 items
+            if ((idx + 1) % 10 === 0) {
+              nodes.push(
+                <div key={`ad-${idx}`} className="col-span-full flex justify-center">
+                  <div className="w-full max-w-sm border-2 border-dashed border-gray-300 dark:border-white/30 bg-white/40 p-4 rounded-md text-center text-sm text-muted-foreground">
+                    Ad Slot: Inline Native (after 10 reports)
+                  </div>
+                </div>
+              );
+            }
+            return nodes;
+          })}
         </div>
       )}
     </div>

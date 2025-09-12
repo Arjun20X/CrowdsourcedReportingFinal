@@ -268,7 +268,55 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <ProfileManager uid={uid} />
         </DialogContent>
       </Dialog>
-      {pathname === '/UserPage' && (<ReportFlow onCreated={() => {}} />)}
+      {pathname === '/UserPage' && userPageReady && (<ReportFlow onCreated={() => {}} />)}
+      {/* Native ad near footer for homepage only */}
+      {lower === '/' && (
+        <>
+          <div className="container py-6">
+            <div className="mx-auto max-w-6xl">
+              <div className="border-2 border-dashed border-gray-300 dark:border-white/30 bg-white/40 p-4 rounded-md text-center text-sm text-muted-foreground">
+                Ad Slot: Native (responsive card)
+              </div>
+            </div>
+          </div>
+
+          {/* Services section (homepage) */}
+          <div className="container py-8">
+            <div className="mx-auto max-w-6xl">
+              <h2 className="mb-6 text-[28px] md:text-[32px] font-semibold text-center text-white"><span style={{ color: 'rgb(0,0,0)' }}>Our Services</span></h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { id: 'pay-house-tax', title: 'Pay House Tax Online' },
+                  { id: 'pay-water-tax', title: 'Pay Water Tax Online' },
+                  { id: 'birth-cert', title: 'Apply for Birth Certificate' },
+                  { id: 'death-cert', title: 'Apply for Death Certificate' },
+                  { id: 'lodge-complaint', title: 'Lodge a Complaint (Civic Issues)' },
+                  { id: 'track-complaint', title: 'Track Complaint Status' },
+                  { id: 'book-hall', title: 'Book Community Hall / Ground' },
+                ].map((s) => (
+                  <a
+                    key={s.id}
+                    href={`/services#${s.id}`}
+                    className="group block p-6 min-h-[88px] flex items-center justify-center text-center rounded-[10px] text-white font-medium transition-transform duration-200 transform hover:-translate-y-[5px] hover:shadow-lg"
+                    style={{ backgroundColor: 'rgb(42,147,243)' }}
+                  >
+                    <span className="text-sm">{s.title}</span>
+                  </a>
+                ))}
+
+                {/* View More card */}
+                <a
+                  href="/services"
+                  className="group block p-6 min-h-[88px] flex items-center justify-center text-center rounded-[10px] text-white font-medium transition-transform duration-200 transform hover:-translate-y-[5px] hover:shadow-lg"
+                  style={{ backgroundColor: 'rgb(42,147,243)' }}
+                >
+                  <span className="text-sm">View More Services</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       <footer className="mt-16 border-t bg-muted/30">
         <div className="container grid gap-8 py-10 md:grid-cols-3">
           <div>
