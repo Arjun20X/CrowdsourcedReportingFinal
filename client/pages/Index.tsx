@@ -11,6 +11,7 @@ import { Reveal } from "@/components/app/Reveal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Megaphone, Users, LineChart } from "lucide-react";
 import { safeFetchJson } from "@/lib/api";
+import AdCarousel from '@/components/ads/AdCarousel';
 
 export default function Index() {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -149,7 +150,7 @@ export default function Index() {
         {/* Right panel ad (300x250 desktop, below map on mobile) */}
         <aside className="w-full md:w-72">
           <div className="mx-auto md:ml-4">
-            <div className="border-2 border-dashed border-gray-300 dark:border-white/30 bg-white/40 p-4 rounded-md text-center text-sm text-muted-foreground">
+            <div className="bg-white/40 p-4 rounded-md text-center text-sm text-muted-foreground">
               Ad Slot: Dashboard Right Panel (300x250)
             </div>
           </div>
@@ -162,47 +163,21 @@ export default function Index() {
       <OurMission />
 
       {/* How it works */}
-      <HowItWorks />
+  <HowItWorks />
 
-      {/* FAQ */}
-      <Faq />
+
+  {/* FAQ */}
+  <Faq />
 
       {/* Testimonials */}
       <Testimonials />
 
-      {/* Advertisements */}
+      {/* Advertisement under Testimonials */}
       <section className="border-t py-12">
         <div className="container mx-auto">
-          <h2 className="mb-6 text-center text-3xl font-bold">Advertisements</h2>
-
-          <div className="overflow-hidden">
-            <style>{`
-              .ad-marquee { display: flex; }
-              .ad-track { display:flex; gap:20px; align-items:center; animation: adMarquee 28s linear infinite; }
-              .ad-box { width: 299px; height: 299px; min-width: 299px; min-height: 299px; }
-              @keyframes adMarquee { from { transform: translateX(0%); } to { transform: translateX(-50%); } }
-            `}</style>
-
-            <div className="ad-marquee">
-              <div className="ad-track" aria-hidden="true">
-                {Array.from({ length: 8 }).map((_, idx) => (
-                  <div key={`ad-${idx}`} className="ad-box">
-                    <div className="h-full rounded-lg border bg-card p-4 text-sm shadow-sm flex items-center justify-center transition-transform duration-200 transform hover:scale-105 hover:shadow-lg">
-                      <span className="text-sm font-medium text-foreground">Post Your Ad Here</span>
-                    </div>
-                  </div>
-                ))}
-
-                {/* duplicated for seamless loop */}
-                {Array.from({ length: 8 }).map((_, idx) => (
-                  <div key={`ad-dup-${idx}`} className="ad-box">
-                    <div className="h-full rounded-lg border bg-card p-4 text-sm shadow-sm flex items-center justify-center transition-transform duration-200 transform hover:scale-105 hover:shadow-lg">
-                      <span className="text-sm font-medium text-foreground">Post Your Ad Here</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <h2 className="mb-6 text-center text-3xl font-bold">Advertisement</h2>
+          <div className="mx-auto max-w-6xl">
+            <AdCarousel />
           </div>
         </div>
       </section>
@@ -258,7 +233,7 @@ function Testimonials() {
             {quotes.map((t, i) => (
               <CarouselItem key={i} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
                 <div className="h-full">
-                  <div className="rounded-lg border bg-card p-4 text-sm shadow-sm h-full">
+                  <div className="rounded-lg bg-card p-4 text-sm shadow-sm h-full">
                     <div className="break-words">“{t.q}”</div>
                     <div className="mt-2 text-xs text-muted-foreground">— {t.a}</div>
                   </div>

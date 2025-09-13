@@ -12,6 +12,7 @@ import { safeFetchJson } from "@/lib/api";
 import { ReportFlow } from "@/components/app/ReportFlow";
 import { LeaderboardList } from "@/components/app/LeaderboardList";
 import { WardLeaderDashboard } from "@/components/app/WardLeaderDashboard";
+import AdCarousel from '@/components/ads/AdCarousel';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useLocalStorage<Locale>("locale", getDefaultLocale());
@@ -112,20 +113,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container flex h-16 items-center justify-between pl-2.5 pr-4 sm:px-8">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
             <BrandLogo />
-            <span>Sahayak</span>
+            <span className="pr-[79px] sm:pr-0">Sahayak</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-              <NavLink to="/UserPage" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Home</NavLink>
-              <NavLink to="/issues" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Issues</NavLink>
-              <NavLink to="/contributions" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Community</NavLink>
-              <NavLink to="/gallery" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Image Gallery</NavLink>
-              {pathname === '/UserPage' && (
-                <button className="text-muted-foreground hover:text-foreground" onClick={() => setLeaderPerfOpen(v=>!v)} aria-haspopup="dialog" aria-expanded={leaderPerfOpen}>Ward Leader Progress</button>
-              )}
+            {pathname === '/services' ? (
+              <NavLink to="/about" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>About</NavLink>
+            ) : (
+              <>
+                <NavLink to="/UserPage" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Home</NavLink>
+                <NavLink to="/issues" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Issues</NavLink>
+                <NavLink to="/contributions" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Community</NavLink>
+                <NavLink to="/gallery" className={({ isActive }) => isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}>Image Gallery</NavLink>
+                {pathname === '/UserPage' && (
+                  <button className="text-muted-foreground hover:text-foreground" onClick={() => setLeaderPerfOpen(v=>!v)} aria-haspopup="dialog" aria-expanded={leaderPerfOpen}>Ward Leader Progress</button>
+                )}
+              </>
+            )}
           </nav>
           <div className="relative flex items-center gap-2 sm:gap-3" ref={menuRef}>
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative flex flex-col sm:flex-row">
               <button aria-haspopup="dialog" aria-expanded={notifOpen} onClick={() => setNotifOpen(v => !v)} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-accent ml-2 sm:ml-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M12 2a6 6 0 0 0-6 6v3.1l-1.6 3.2A1 1 0 0 0 5.3 16H19a1 1 0 0 0 .9-1.5L18 11.1V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3Z"/></svg>
                 {notifCount > 0 && (<span className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">{notifCount}</span>)}
@@ -161,14 +168,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(() => { const displayName = pathname === '/UserPage' ? 'Ayush' : (uid || 'You'); return (
-              <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                  {displayName[0]?.toUpperCase()}
-                </span>
-                <span className="max-w-[10ch] truncate text-sm">{displayName}</span>
-              </button> ); })()}
-            {menuOpen && (
+            {(uid || pathname === '/UserPage') ? (
+              (() => { const displayName = pathname === '/UserPage' ? 'Ayush' : (uid || 'You'); return (
+                <>
+                  <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                      {displayName[0]?.toUpperCase()}
+                    </span>
+                    <span className="max-w-[10ch] truncate text-sm">{displayName}</span>
+                  </button>
+                </>
+              ); })()
+            ) : (
+              pathname === '/services' ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button aria-label="Auth menu" className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background hover:bg-accent">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" />
+                      </svg>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem asChild>
+                      <Link to="/login">Login</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/signup">Sign Up</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link to="/login" className="rounded-md border px-3 py-1 text-sm hover:bg-accent">Login</Link>
+                  <Link to="/signup" className="rounded-md bg-primary px-3 py-1 text-sm text-white hover:opacity-90">Sign Up</Link>
+                </div>
+              )
+            )}
+
+            {menuOpen && (uid || pathname === '/UserPage') && (
               <div role="menu" className="absolute right-0 top-12 z-50 w-64 rounded-md border bg-background p-1 shadow-md">
                 <div className="flex items-center gap-2 rounded px-3 py-2">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{(pathname === '/UserPage' ? 'Ayush' : (uid || 'User'))[0]?.toUpperCase()}</span>
@@ -188,11 +226,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <button role="menuitem" className="w-full rounded px-3 py-2 text-left text-destructive hover:bg-accent" onClick={() => { try{ localStorage.clear(); sessionStorage.clear(); }catch{} navigate('/'); }}>Logout</button>
               </div>
             )}
-            <button aria-label="Open menu" className="inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-accent md:hidden" onClick={() => setMobileNavOpen(v=>!v)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/>
-              </svg>
-            </button>
           </div>
         </div>
       </header>
@@ -202,12 +235,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {showChrome && mobileNavOpen && (
         <div className="fixed inset-x-0 top-16 z-50 border-b bg-background md:hidden">
           <nav className="grid gap-1 p-3">
-            <NavLink to="/UserPage" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Home</NavLink>
-            <NavLink to="/contributions" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Community</NavLink>
-            <NavLink to="/issues" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Issues</NavLink>
-            <NavLink to="/gallery" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Image Gallery</NavLink>
-            {pathname === '/UserPage' && (
-              <button className="rounded px-3 py-2 text-left hover:bg-accent" aria-haspopup="dialog" aria-expanded={leaderPerfOpen} onClick={()=>{ setLeaderPerfOpen(v=>!v); setMobileNavOpen(false); }}>Ward Leader Progress</button>
+            {pathname === '/services' ? (
+              <NavLink to="/about" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>About</NavLink>
+            ) : (
+              <>
+                <NavLink to="/UserPage" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Home</NavLink>
+                <NavLink to="/contributions" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Community</NavLink>
+                <NavLink to="/issues" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Issues</NavLink>
+                <NavLink to="/gallery" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Image Gallery</NavLink>
+                { !uid && pathname !== '/UserPage' && (
+                  <>
+                    <NavLink to="/login" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Login</NavLink>
+                    <NavLink to="/signup" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Sign Up</NavLink>
+                  </>
+                )}
+                {pathname === '/UserPage' && (
+                  <button className="rounded px-3 py-2 text-left hover:bg-accent" aria-haspopup="dialog" aria-expanded={leaderPerfOpen} onClick={()=>{ setLeaderPerfOpen(v=>!v); setMobileNavOpen(false); }}>Ward Leader Progress</button>
+                )}
+              </>
             )}
           </nav>
         </div>
@@ -284,7 +329,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="container py-8">
             <div className="mx-auto max-w-6xl">
               <h2 className="mb-6 text-[28px] md:text-[32px] font-semibold text-center text-white"><span style={{ color: 'rgb(0,0,0)' }}>Our Services</span></h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {[
                   { id: 'pay-house-tax', title: 'Pay House Tax Online' },
                   { id: 'pay-water-tax', title: 'Pay Water Tax Online' },
@@ -297,21 +342,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <a
                     key={s.id}
                     href={`/services#${s.id}`}
-                    className="group block p-6 min-h-[88px] flex items-center justify-center text-center rounded-[10px] text-white font-medium transition-transform duration-200 transform hover:-translate-y-[5px] hover:shadow-lg"
-                    style={{ backgroundColor: 'rgb(42,147,243)' }}
+                    className="group block p-8 min-h-[88px] flex items-center justify-center text-center text-sm font-medium rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white/5 shadow-sm backdrop-blur hover:shadow-md transition-shadow duration-200"
+                    aria-label={s.title}
                   >
-                    <span className="text-sm">{s.title}</span>
+                    <span className="text-sm text-foreground">{s.title}</span>
                   </a>
                 ))}
 
                 {/* View More card */}
                 <a
                   href="/services"
-                  className="group block p-6 min-h-[88px] flex items-center justify-center text-center rounded-[10px] text-white font-medium transition-transform duration-200 transform hover:-translate-y-[5px] hover:shadow-lg"
-                  style={{ backgroundColor: 'rgb(42,147,243)' }}
+                  className="group block p-8 min-h-[88px] flex items-center justify-center text-center text-sm font-medium rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white/5 shadow-sm backdrop-blur hover:shadow-md transition-shadow duration-200"
                 >
-                  <span className="text-sm">View More Services</span>
+                  <span className="text-sm text-foreground">View More Services</span>
                 </a>
+              </div>
+              <div className="mx-auto mt-8 max-w-6xl">
+                <h2 className="mb-6 text-center text-3xl font-bold">Advertisements</h2>
+                <AdCarousel />
               </div>
             </div>
           </div>
