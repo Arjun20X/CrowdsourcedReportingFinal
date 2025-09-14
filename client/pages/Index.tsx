@@ -34,6 +34,13 @@ export default function Index() {
     load();
   }, []);
 
+  // Reload issues when a new issue is created elsewhere (e.g. ReportFlow)
+  useEffect(() => {
+    function onCreated() { try { load(); } catch {} }
+    window.addEventListener('issue_created', onCreated as EventListener);
+    return () => window.removeEventListener('issue_created', onCreated as EventListener);
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setMinElapsed(true), 6000);
     return () => clearTimeout(t);

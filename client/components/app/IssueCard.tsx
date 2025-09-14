@@ -1,16 +1,18 @@
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import type { Issue } from "@shared/api";
+import IssueProgressModal from "@/components/app/IssueProgressModal";
 
-export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: (id: string, v: 1 | -1) => void; onComment: (id: string, msg: string) => void; }) {
+export function IssueCard({ issue, onVote, onComment, recentCreated }: { issue: Issue; onVote: (id: string, v: 1 | -1) => void; onComment: (id: string, msg: string) => void; recentCreated?: boolean }) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const [contribOpen, setContribOpen] = useState(false);
   const [contribText, setContribText] = useState("");
   const [contribMedia, setContribMedia] = useState<string>("");
   const [localContribs, setLocalContribs] = useState<any[]>(issue.contributions || []);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const statusColor = {
     submitted: "bg-info/10 text-info",
@@ -41,11 +43,14 @@ export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: 
   }, [issue.status]);
 
   const progress = useMemo(() => {
+    // If this issue was just created via the in-app ReportFlow, show 0 until it advances
+    if (issue.status === 'submitted' && recentCreated) return 0;
+    // Category/title overrides (keep existing behavior for non-recent items)
     if (issue.category === "pothole") return 100;
     if (issue.category === "garbage") return 75;
     if (/footpath/i.test(issue.title)) return 10;
     return baseProgress;
-  }, [issue.category, issue.title, baseProgress]);
+  }, [issue.status, issue.category, issue.title, baseProgress, recentCreated]);
 
   const barColor = progress === 100 ? "bg-success" : progress === 75 ? "bg-warning" : "bg-destructive";
 
@@ -101,16 +106,36 @@ export function IssueCard({ issue, onVote, onComment }: { issue: Issue; onVote: 
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted" aria-label={`Progress ${progress}%`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-                    <div className={`h-full ${barColor} transition-all`} style={{ width: `${progress}%` }} />
+                  <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-muted cursor-pointer"
+                    aria-label={`Progress ${progress}%`}
+                    role="button"
+                    onClick={() => setModalOpen(true)}
+                  >
+                    <div className={`h-full ${barColor} transition-all duration-500 ease-in-out`} style={{ width: `${progress}%` }} />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top">{progress}% Complete</TooltipContent>
+                <TooltipContent side="top">{progress}% Complete — click to view timeline</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            {/* Clicking opens a modal with detailed vertical timeline (handled below) */}
           </div>
         </div>
       </div>
+
+      {/* Modal: vertical detailed timeline for this issue */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-2xl w-[92vw] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Progress Timeline</DialogTitle>
+            <DialogDescription>Detailed lifecycle stages for this issue</DialogDescription>
+          </DialogHeader>
+          <div className="p-2">
+            <IssueProgressModal progress={progress} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">

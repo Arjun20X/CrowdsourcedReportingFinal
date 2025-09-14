@@ -217,11 +217,13 @@ export function ReportFlow({ onCreated }: { onCreated: (i: Issue) => void }) {
       if (!res.ok) throw new Error("Network");
       const issue = (await res.json()) as Issue;
       onCreated(issue);
+      try { window.dispatchEvent(new CustomEvent('issue_created', { detail: issue })); } catch {}
       setOpen(false);
     } catch (e) {
       const q = JSON.parse(localStorage.getItem("offline-queue") || "[]");
       q.push({ type: "create-issue", payload });
       localStorage.setItem("offline-queue", JSON.stringify(q));
+      try { window.dispatchEvent(new CustomEvent('issue_created', { detail: { offline: true, payload } })); } catch {}
       alert("Offline: saved to queue, will retry later.");
       setOpen(false);
     } finally {

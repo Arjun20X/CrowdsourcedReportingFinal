@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type { Issue } from "@shared/api";
 import { IssueCard } from "@/components/app/IssueCard";
@@ -34,11 +34,18 @@ export default function Issues() {
   const wardId = (typeof localStorage !== 'undefined' && localStorage.getItem('wardId')) || 'ward-1';
 
   const filtered = useMemo(() => {
-    if (!view) return issues;
-    if (view === 'ward') return issues.filter((i)=> i.wardId === wardId && i.status !== 'resolved');
-    if (view === 'verified') return issues.filter((i)=> (i.upvotes || 0) > 0);
-    if (view === 'categories') return issues; // full list to explore categories
-    return issues;
+    // Exclude demo entries
+    const excludedTitles = new Set(['demo', 'demo2']);
+    const cleaned = issues.filter((i) => {
+      const t = (i.title || '').toString().trim().toLowerCase();
+      return !excludedTitles.has(t);
+    });
+
+    if (!view) return cleaned;
+    if (view === 'ward') return cleaned.filter((i)=> i.wardId === wardId && i.status !== 'resolved');
+    if (view === 'verified') return cleaned.filter((i)=> (i.upvotes || 0) > 0);
+    if (view === 'categories') return cleaned; // full list to explore categories
+    return cleaned;
   }, [issues, view, wardId]);
 
   async function vote(id: string, v: 1 | -1) {
@@ -70,7 +77,9 @@ export default function Issues() {
           )}
           {filtered.map((item, idx) => {
             const nodes: React.ReactNode[] = [];
-            nodes.push(<IssueCard key={item.id} issue={item} onVote={vote} onComment={() => {}} />);
+            const createdAt = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+            const recent = (Date.now() - createdAt) < (5 * 60 * 1000); // 5 minutes
+            nodes.push(<IssueCard key={item.id} issue={item} onVote={vote} onComment={() => {}} recentCreated={recent} />);
             // Insert native ad placeholder after every 10 items
             if ((idx + 1) % 10 === 0) {
               nodes.push(

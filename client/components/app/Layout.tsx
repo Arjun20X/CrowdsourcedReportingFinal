@@ -77,11 +77,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           .map((i:any) => ({ id: i.id, kind: 'issue' as const, title: i.title, meta: i.status === 'submitted' ? 'Needs verification' : 'Pending verification', href: '/issues', at: i.createdAt }));
         const eventItems = events
           .map((e:any) => ({ id: e.id, kind: 'event' as const, title: e.title, meta: `${new Date(e.startsAt).toLocaleDateString()} • ${e.location}`, href: '/contributions', at: e.startsAt }));
+        // Exclude demo entries from notifications
+        const excludedTitles = new Set(['demo', 'demo2']);
         const items = [...issueItems, ...eventItems]
+          .filter((it) => !excludedTitles.has(((it.title || '') + '').toString().trim().toLowerCase()))
           .sort((a,b)=> +new Date(b.at) - +new Date(a.at));
         if (!cancel) {
           setNotifItems(items);
-          setNotifCount(issueItems.length + eventItems.length);
+          setNotifCount(items.length);
         }
       } catch {}
     }
@@ -104,6 +107,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const lower = pathname.toLowerCase();
+  // Show profile/menu on UserPage and on main public pages where we don't want login/signup
+  const targetRoutes = ['/UserPage','/issues','/gallery','/contributions'];
+  const showProfile = Boolean(uid) || targetRoutes.includes(pathname);
+  const mobileOrderTarget = targetRoutes.includes(pathname);
   const showChrome = !(lower === "/" || lower.startsWith("/signup") || lower.startsWith("/otp") || lower.startsWith("/admin"));
 
   return (
@@ -113,7 +120,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container flex h-16 items-center justify-between pl-2.5 pr-4 sm:px-8">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
             <BrandLogo />
-            <span className="pr-[79px] sm:pr-0">Sahayak</span>
+            <span className="whitespace-nowrap font-semibold pr-2 sm:pr-0">Sahayak</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             {pathname === '/services' ? (
@@ -131,87 +138,101 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="relative flex items-center gap-2 sm:gap-3" ref={menuRef}>
-            {/* Notifications */}
-            <div className="relative flex flex-col sm:flex-row">
+            {/* Notifications (mobile order 1) */}
+            <div className={mobileOrderTarget ? "relative flex flex-col sm:flex-row order-1 md:order-none" : "relative flex flex-col sm:flex-row md:order-none"}>
               <button aria-haspopup="dialog" aria-expanded={notifOpen} onClick={() => setNotifOpen(v => !v)} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-accent ml-2 sm:ml-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M12 2a6 6 0 0 0-6 6v3.1l-1.6 3.2A1 1 0 0 0 5.3 16H19a1 1 0 0 0 .9-1.5L18 11.1V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3Z"/></svg>
                 {notifCount > 0 && (<span className="absolute -right-1.5 -top-1.5 rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">{notifCount}</span>)}
               </button>
             </div>
 
-            {/* Language */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button aria-label={t(locale, 'language')} className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background hover:bg-accent">
-                  <Languages className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {[
-                  { code: 'en', label: 'English' },
-                  { code: 'hi', label: 'हिंदी' },
-                  { code: 'bn', label: '���াংলা' },
-                  { code: 'mr', label: 'मराठी' },
-                  { code: 'te', label: 'తెలుగు' },
-                  { code: 'ta', label: 'தமிழ்' },
-                  { code: 'gu', label: 'ગુજરાતી' },
-                  { code: 'ur', label: 'اردو' },
-                  { code: 'kn', label: 'ಕನ್ನಡ' },
-                  { code: 'or', label: 'ଓଡ଼ି���' },
-                  { code: 'ml', label: 'മലയാളം' },
-                  { code: 'pa', label: 'ਪੰਜਾਬੀ' },
-                ].map(opt => (
-                  <DropdownMenuItem key={opt.code} onClick={() => setLocale(opt.code as Locale)} className={locale === (opt.code as Locale) ? 'font-medium text-primary' : ''}>
-                    {opt.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {(uid || pathname === '/UserPage') ? (
-              (() => { const displayName = pathname === '/UserPage' ? 'Ayush' : (uid || 'You'); return (
-                <>
-                  <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                      {displayName[0]?.toUpperCase()}
-                    </span>
-                    <span className="max-w-[10ch] truncate text-sm">{displayName}</span>
+            {/* Language (mobile order 2) */}
+            <div className={mobileOrderTarget ? "order-2 md:order-none ml-1" : "md:order-none ml-1"}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button aria-label={t(locale, 'language')} className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background hover:bg-accent">
+                    <Languages className="h-4 w-4" />
                   </button>
-                </>
-              ); })()
-            ) : (
-              pathname === '/services' ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button aria-label="Auth menu" className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background hover:bg-accent">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                        <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" />
-                      </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {[
+                    { code: 'en', label: 'English' },
+                    { code: 'hi', label: 'हिंदी' },
+                    { code: 'bn', label: '���াংলা' },
+                    { code: 'mr', label: 'मराठी' },
+                    { code: 'te', label: 'తెలుగు' },
+                    { code: 'ta', label: 'தமிழ்' },
+                    { code: 'gu', label: 'ગુજરાતી' },
+                    { code: 'ur', label: 'اردو' },
+                    { code: 'kn', label: 'ಕನ್ನಡ' },
+                    { code: 'or', label: 'ଓଡ଼ି���' },
+                    { code: 'ml', label: 'മലയാളം' },
+                    { code: 'pa', label: 'ਪੰਜਾਬੀ' },
+                  ].map(opt => (
+                    <DropdownMenuItem key={opt.code} onClick={() => setLocale(opt.code as Locale)} className={locale === (opt.code as Locale) ? 'font-medium text-primary' : ''}>
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Profile/User Menu (mobile order 3) */}
+            <div className={mobileOrderTarget ? "order-3 md:order-none ml-1" : "md:order-none ml-1"}>
+              {(showProfile) ? (
+                (() => { const displayName = (uid && uid.trim()) ? uid : 'Ayush'; return (
+                  <>
+                    <button aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 hover:bg-accent">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                        {displayName[0]?.toUpperCase()}
+                      </span>
+                      <span className="max-w-[10ch] truncate text-sm">{displayName}</span>
                     </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem asChild>
-                      <Link to="/login">Login</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/signup">Sign Up</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </>
+                ); })()
               ) : (
-                <div className="flex items-center gap-2">
-                  <Link to="/login" className="rounded-md border px-3 py-1 text-sm hover:bg-accent">Login</Link>
-                  <Link to="/signup" className="rounded-md bg-primary px-3 py-1 text-sm text-white hover:opacity-90">Sign Up</Link>
-                </div>
-              )
+                pathname === '/services' ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button aria-label="Auth menu" className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background hover:bg-accent">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                          <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" />
+                        </svg>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem asChild>
+                        <Link to="/login">Login</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/signup">Sign Up</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link to="/login" className="rounded-md border px-3 py-1 text-sm hover:bg-accent">Login</Link>
+                    <Link to="/signup" className="rounded-md bg-primary px-3 py-1 text-sm text-white hover:opacity-90">Sign Up</Link>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Mobile hamburger for specific pages (mobile order last) */}
+            {['/UserPage','/issues','/gallery','/contributions'].includes(pathname) && (
+              <button aria-label="Open mobile menu" onClick={() => setMobileNavOpen(true)} className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white/70 hover:bg-white/40 ml-2 order-last">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+                  <path fill="currentColor" d="M4 7h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                </svg>
+              </button>
             )}
 
-            {menuOpen && (uid || pathname === '/UserPage') && (
+            {menuOpen && showProfile && (
               <div role="menu" className="absolute right-0 top-12 z-50 w-64 rounded-md border bg-background p-1 shadow-md">
                 <div className="flex items-center gap-2 rounded px-3 py-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{(pathname === '/UserPage' ? 'Ayush' : (uid || 'User'))[0]?.toUpperCase()}</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">{( (uid && uid.trim()) ? uid : 'Ayush')[0]?.toUpperCase()}</span>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{pathname === '/UserPage' ? 'Ayush' : (uid || 'User')}</div>
+                    <div className="truncate text-sm font-medium">{(uid && uid.trim()) ? uid : 'Ayush'}</div>
                     <div className="text-xs text-muted-foreground">Signed in</div>
                   </div>
                 </div>
@@ -243,13 +264,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NavLink to="/contributions" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Community</NavLink>
                 <NavLink to="/issues" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Issues</NavLink>
                 <NavLink to="/gallery" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Image Gallery</NavLink>
-                { !uid && pathname !== '/UserPage' && (
+                { !uid && !['/UserPage','/issues','/gallery','/contributions'].includes(pathname) && (
                   <>
                     <NavLink to="/login" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Login</NavLink>
                     <NavLink to="/signup" onClick={()=>setMobileNavOpen(false)} className={({isActive})=>`rounded px-3 py-2 ${isActive? 'bg-accent' : 'hover:bg-accent'}`}>Sign Up</NavLink>
                   </>
                 )}
-                {pathname === '/UserPage' && (
+                {['/UserPage','/issues','/gallery','/contributions'].includes(pathname) && (
                   <button className="rounded px-3 py-2 text-left hover:bg-accent" aria-haspopup="dialog" aria-expanded={leaderPerfOpen} onClick={()=>{ setLeaderPerfOpen(v=>!v); setMobileNavOpen(false); }}>Ward Leader Progress</button>
                 )}
               </>
